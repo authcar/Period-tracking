@@ -19,35 +19,33 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Period Tracker")),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            /// 1) Add fake period entry for testing
-            final entry = MenstrualCycle(
-              startDate: DateTime.now(),
-              endDate: DateTime.now().add(const Duration(days: 4)),
-            );
-
-            await menstrualBox.add(entry);
-
-            /// 2) Calculate prediction
-            final next = prediction.predictNextPeriod();
-            final ovulation = prediction.predictOvulation();
-            final fertile = prediction.fertileWindow();
-
-            print("Next period: $next");
-            print("Ovulation: $ovulation");
-            print("Fertile Window: $fertile");
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  "Added cycle!\nNext: ${next?.toLocal()}\nOvulation: ${ovulation?.toLocal()}",
-                ),
+      body: SingleChildScrollView(  // Biar bisa di-scroll
+        child: Column(
+          children: [
+            // Tombol test (opsional, bisa dihapus nanti)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () async {
+                  final entry = MenstrualCycle(
+                    startDate: DateTime.now(),
+                    endDate: DateTime.now().add(const Duration(days: 4)),
+                  );
+                  await menstrualBox.add(entry);
+                  
+                  setState(() {}); // Refresh tampilan
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Cycle added!")),
+                  );
+                },
+                child: const Text("Add Test Cycle"),
               ),
-            );
-          },
-          child: const Text("Add Cycle + Predict"),
+            ),
+            
+            // Calendar widget kamu
+            const CalendarWidget(),
+          ],
         ),
       ),
     );

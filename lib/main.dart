@@ -35,12 +35,3 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Demo Hive")),
-      body: Center(child: Text("Halo! Hive sudah jalan.")),
-    );
-  }
-}
