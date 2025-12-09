@@ -16,9 +16,12 @@ void main() async {
   await Hive.openBox<MenstrualCycle>('menstrualDataBox');
   await Hive.openBox<DailyLog>('dailyLogBox');
   await Hive.openBox<UserSettings>('settingsBox');
-  
-  await Hive.openBox('periods'); // database box
 
+  final settingsBox = Hive.box<UserSettings>('settingsBox');
+  if (settingsBox.isEmpty) { // "Kalau laci kosong (belum ada isinya)... taruh setting default
+    settingsBox.put(0, UserSettings());
+  }
+  
   runApp( MyApp());
 }
 class MyApp extends StatelessWidget {

@@ -9,11 +9,16 @@ class HomeScreen extends StatefulWidget {
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
+
+  
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController inputPeriodLength =
+    TextEditingController();
+
   final prediction = PeriodPredictionService();
-  final menstrualBox = Hive.box<MenstrualCycle>('menstrualDataBox');
+  final menstrualBox = Hive.box<MenstrualCycle>('menstrualDataBox'); // penyimpanan data siklus menstruasi
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +27,19 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SingleChildScrollView(  // Biar bisa di-scroll
         child: Column(
           children: [
+            //  TEXTFIELD
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: TextField(
+                controller: inputPeriodLength,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Period Length (days)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+
             // Tombol test (opsional, bisa dihapus nanti)
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -29,11 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   final entry = MenstrualCycle(
                     startDate: DateTime.now(),
-                    endDate: DateTime.now().add(const Duration(days: 4)),
+                    endDate: DateTime.now().add(const Duration(days: 4)), //: hari ini sampai 4 hari ke depan.
                   );
                   await menstrualBox.add(entry);
                   
-                  setState(() {}); // Refresh tampilan
+                  setState(() {}); // Refresh tampilan UI
                   
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Cycle added!")),
