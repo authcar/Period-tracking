@@ -20,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final prediction = PeriodPredictionService();
   final menstrualBox = Hive.box<MenstrualCycle>('menstrualDataBox'); // penyimpanan data siklus menstruasi
 
+  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -48,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final entry = MenstrualCycle(
                     startDate: DateTime.now(),
                     endDate: DateTime.now().add(const Duration(days: 4)), //: hari ini sampai 4 hari ke depan.
-                  );
+                  ); //audrey
                   await menstrualBox.add(entry);
                   
                   setState(() {}); // Refresh tampilan UI

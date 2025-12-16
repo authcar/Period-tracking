@@ -52,8 +52,10 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     final settingsBox = Hive.box<UserSettings>('settingsBox');
     final settings = settingsBox.get(0);
-    final periodLength = settings?.averagePeriodLength ?? 5; // ?.if null then return null instead of crashing
-    //?? if null return 5 
+    final periodLength =
+        settings?.averagePeriodLength ??
+        5; // ?.if null then return null instead of crashing
+    //?? if null return 5
 
     final periodEnd = nextPeriod.add(Duration(days: periodLength - 1));
 
@@ -149,64 +151,68 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: menstrualBox.listenable(),  // menstrualBox.listenable() = Setiap kali ada data baru/dihapus dari menstrualBox, kalender refresh
+      valueListenable: menstrualBox
+          .listenable(), // menstrualBox.listenable() = Setiap kali ada data baru/dihapus dari menstrualBox, kalender refresh
       builder: (context, Box<MenstrualCycle> box, _) {
         return Column(
-         children: [
-        // Calendar
-          TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _focusedDay,
-            calendarFormat: _calendarFormat,
-            selectedDayPredicate: (day) =>
-                _selectedDay != null && _isSameDay(_selectedDay!, day),
-            onDaySelected: (selectedDay, focusedDay) { //Saat user klik hari, update state & tampilkan detail.
-              setState(() {
-                _selectedDay = selectedDay;
+          children: [
+            // Calendar
+            TableCalendar(
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              calendarFormat: _calendarFormat,
+              selectedDayPredicate: (day) =>
+                  _selectedDay != null && _isSameDay(_selectedDay!, day),
+              onDaySelected: (selectedDay, focusedDay) {
+                //Saat user klik hari, update state & tampilkan detail.
+                setState(() {
+                  _selectedDay = selectedDay;
+                  _focusedDay = focusedDay;
+                });
+                _showDayDetails(selectedDay);
+              },
+              onFormatChanged: (format) {
+                setState(() {
+                  _calendarFormat = format;
+                });
+              },
+              onPageChanged: (focusedDay) {
                 _focusedDay = focusedDay;
-              });
-              _showDayDetails(selectedDay);
-            },
-            onFormatChanged: (format) {
-              setState(() {
-                _calendarFormat = format;
-              });
-            },
-            onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
-            },
-            calendarStyle: CalendarStyle( //Warna default, today, selected, marker.
-              todayDecoration: BoxDecoration(
-                color: Colors.blue.shade300,
-                shape: BoxShape.circle,
+              },
+              calendarStyle: CalendarStyle(
+                //Warna default, today, selected, marker.
+                todayDecoration: BoxDecoration(
+                  color: Colors.blue.shade300,
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: Colors.pink.shade400,
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  shape: BoxShape.circle,
+                ),
               ),
-              selectedDecoration: BoxDecoration(
-                color: Colors.pink.shade400,
-                shape: BoxShape.circle,
-              ),
-              markerDecoration: BoxDecoration(
-                color: Colors.red.shade700,
-                shape: BoxShape.circle,
+              calendarBuilders: CalendarBuilders(
+                //Kustomisasi tampilan tiap hari (red, green, pink).
+                defaultBuilder: (context, day, focusedDay) {
+                  return _buildDayCell(day);
+                },
+                todayBuilder: (context, day, focusedDay) {
+                  return _buildDayCell(day, isToday: true);
+                },
+                selectedBuilder: (context, day, focusedDay) {
+                  return _buildDayCell(day, isSelected: true);
+                },
               ),
             ),
-            calendarBuilders: CalendarBuilders( //Kustomisasi tampilan tiap hari (red, green, pink).
-              defaultBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day);
-              },
-              todayBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, isToday: true);
-              },
-              selectedBuilder: (context, day, focusedDay) {
-                return _buildDayCell(day, isSelected: true);
-              },
-          ),
-        ),
-        const SizedBox(height: 20),
-        // Legend
-        _buildLegend(),
             const SizedBox(height: 20),
-        // Selected day info
+            // Legend
+            _buildLegend(),
+            const SizedBox(height: 20),
+            // Selected day info
             if (_selectedDay != null) _buildSelectedDayInfo(),
           ],
         );
@@ -214,7 +220,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  Widget _buildDayCell( //Warna tiap hari tergantung statusnya
+  Widget _buildDayCell(
+    //Warna tiap hari tergantung statusnya
     DateTime day, {
     bool isToday = false,
     bool isSelected = false,
@@ -270,7 +277,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   Widget _buildLegend() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Wrap( //Menampilkan keterangan warna kalender
+      child: Wrap(
+        //Menampilkan keterangan warna kalender
         spacing: 12,
         runSpacing: 8,
         alignment: WrapAlignment.center,
@@ -300,11 +308,15 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  Widget _buildSelectedDayInfo() { //Tampil ketika user klik hari tertentu. Menampilkan: Tanggal. Icon delete (hanya jika period). Clear selection (X).
+  Widget _buildSelectedDayInfo() {
+    //Tampil ketika user klik hari tertentu. Menampilkan: Tanggal. Icon delete (hanya jika period). Clear selection (X).
     // Safety check
     if (_selectedDay == null) return const SizedBox.shrink();
 
-    final dayKey = _selectedDay!.toIso8601String().substring(0, 10); //berupa YYYY-MM-DD
+    final dayKey = _selectedDay!.toIso8601String().substring(
+      0,
+      10,
+    ); //berupa YYYY-MM-DD
     final dailyLog = dailyLogBox.get(dayKey);
 
     // Cek apakah hari ini merah (Period)
@@ -389,7 +401,9 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
   void _showDayDetails(DateTime day) {
     final dayKey = day.toIso8601String().substring(0, 10);
-    final dailyLog = dailyLogBox.get(dayKey); //dailyLogBox adalah Hive box yang menyimpan log harian (DailyLog object) dengan key = "YYYY-MM-DD".
+    final dailyLog = dailyLogBox.get(
+      dayKey,
+    ); //dailyLogBox adalah Hive box yang menyimpan log harian (DailyLog object) dengan key = "YYYY-MM-DD".
 
     // You can add a bottom sheet or dialog here for more detailed day info
     // For now, the info is shown in the card below the calendar
