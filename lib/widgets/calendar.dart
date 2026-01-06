@@ -5,6 +5,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/menstrual_cycle.dart';
 import '../models/dailyLog.dart';
 import '../services/periodPrediction.dart';
+import '../widgets/daily_logging_card.dart';
+
 
 class CalendarWidget extends StatefulWidget {
   const CalendarWidget({super.key});
@@ -82,6 +84,16 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
+
+  bool _hasPeriodInSameMonth(DateTime day) {
+  for (var cycle in menstrualBox.values) {
+    if (cycle.startDate.year == day.year &&
+        cycle.startDate.month == day.month) {
+      return true;
+    }
+  }
+  return false;
+}
 
   // --- FUNGSI BARU: START PERIOD ---
   Future<void> _startPeriodHere(DateTime day) async {
@@ -379,6 +391,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildSelectedDayInfo() {
+
     // Safety check
     if (_selectedDay == null) return const SizedBox.shrink();
 
@@ -427,7 +440,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
             // --- TOMBOL AKSI ---
             // 1. Kalau BELUM period → tampilkan "Start Period Here"
-            if (!isPeriod)
+            if (!isPeriod && !_hasPeriodInSameMonth(_selectedDay!))
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -479,6 +492,12 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               ),
               const SizedBox(height: 12),
             ],
+
+             if (isPeriod)
+              DailyLoggingCard(
+                selectedDay: _selectedDay!,
+                dailyLogBox: dailyLogBox,
+              ),
 
             // Log Harian
             if (dailyLog != null) ...[
