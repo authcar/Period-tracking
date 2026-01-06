@@ -1,70 +1,85 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
-import '../models/menstrual_cycle.dart';
-import '../services/periodPrediction.dart';
 import '../widgets/calendar.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
-
-  
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController inputPeriodLength =
-    TextEditingController();
 
-  final prediction = PeriodPredictionService();
-  final menstrualBox = Hive.box<MenstrualCycle>('menstrualDataBox'); // penyimpanan data siklus menstruasi
 
-  
+  Future<void> _showCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _showDialog('Error', 'Location service is disabled');
+      return;
+    }
+
+    // 2. Cek permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showDialog(
+        'Permission Denied',
+        'Location permission permanently denied',
+      );
+      return;
+    }
+
+    // 3. Ambil posisi
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    // 4. Tampilkan popup
+    _showDialog(
+      'Your Location',
+      'Latitude : ${position.latitude}\n'
+      'Longitude: ${position.longitude}',
+    );
+  }
+
+  // 🔹 Fungsi popup dialog
+  void _showDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Period Tracker")),
-      body: SingleChildScrollView(  // Biar bisa di-scroll
+      appBar: AppBar(
+        title: const Text("Period Tracker"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.location_on),
+            onPressed: _showCurrentLocation,
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
         child: Column(
-          children: [
-            //  TEXTFIELD
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: TextField(
-                controller: inputPeriodLength,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Period Length (days)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-
-            // Tombol test (opsional, bisa dihapus nanti)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () async {
-                  final entry = MenstrualCycle(
-                    startDate: DateTime.now(),
-                    endDate: DateTime.now().add(const Duration(days: 4)), //: hari ini sampai 4 hari ke depan.
-                  ); //audrey
-                  await menstrualBox.add(entry);
-                  
-                  setState(() {}); // Refresh tampilan UI
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Cycle added!")),
-                  );
-                },
-                child: const Text("Add Test Cycle"),
-              ),
-            ),
-            
-            // Calendar widget kamu
-            const CalendarWidget(),
+          children: const [
+            SizedBox(height: 16),
+            CalendarWidget(),
           ],
         ),
       ),

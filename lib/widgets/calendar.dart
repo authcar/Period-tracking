@@ -83,9 +83,87 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
-  // --- MULAI KODE BARU DI SINI ---
+  // --- FUNGSI BARU: START PERIOD ---
+  Future<void> _startPeriodHere(DateTime day) async {
+    final settingsBox = Hive.box<UserSettings>('settingsBox');
+    final settings = settingsBox.get(0);
+    final defaultPeriodLength = settings?.averagePeriodLength ?? 5;
 
-  // 1. Fungsi untuk menampilkan konfirmasi hapus
+    // Hitung end date otomatis
+    final endDate = day.add(Duration(days: defaultPeriodLength - 1));
+
+    // Buat cycle baru
+    final newCycle = MenstrualCycle(
+      startDate: day,
+      endDate: endDate,
+    );
+
+    // Simpan ke Hive
+    await menstrualBox.add(newCycle);
+
+    setState(() {
+      // Refresh UI
+    });
+
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Period dimulai ${day.day}/${day.month}/${day.year}\n'
+          'Estimasi selesai: ${endDate.day}/${endDate.month}/${endDate.year}',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  // --- FUNGSI BARU: EDIT END DATE ---
+  Future<void> _editEndDate(DateTime startDay) async {
+    // Cari cycle yang cocok
+    MenstrualCycle? targetCycle;
+    dynamic targetKey;
+
+    for (var key in menstrualBox.keys) {
+      final cycle = menstrualBox.get(key);
+      if (cycle != null && _isSameDay(cycle.startDate, startDay)) {
+        targetCycle = cycle;
+        targetKey = key;
+        break;
+      }
+    }
+
+    if (targetCycle == null) return;
+
+    // Tampilkan date picker
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: targetCycle.endDate,
+      firstDate: targetCycle.startDate,
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      helpText: 'Pilih Tanggal Selesai Period',
+    );
+
+    if (pickedDate != null) {
+      // Update end date
+      targetCycle.endDate = pickedDate;
+      await menstrualBox.put(targetKey, targetCycle);
+
+      setState(() {});
+
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tanggal selesai diupdate ke ${pickedDate.day}/${pickedDate.month}/${pickedDate.year}',
+          ),
+        ),
+      );
+    }
+  }
+
+  // Fungsi untuk menampilkan konfirmasi hapus
   Future<void> _showDeleteConfirmDialog(DateTime day) async {
     return showDialog<void>(
       context: context,
@@ -105,8 +183,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
             TextButton(
               child: const Text('Hapus', style: TextStyle(color: Colors.red)),
               onPressed: () {
-                _removePeriodCycle(day); // Jalankan penghapusan
-                Navigator.of(context).pop(); // Tutup dialog
+                _removePeriodCycle(day);
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -115,15 +193,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     );
   }
 
-  // 2. Fungsi logika penghapusan data dari Hive
+  // Fungsi logika penghapusan data dari Hive
   void _removePeriodCycle(DateTime day) {
     dynamic keyToDelete;
 
-    // Loop semua data di box untuk mencari tanggal yang cocok
     for (var key in menstrualBox.keys) {
       final cycle = menstrualBox.get(key);
       if (cycle != null) {
-        // Cek apakah tanggal yang dipilih (day) ada di dalam rentang siklus ini
         if (_isSameDay(day, cycle.startDate) ||
             _isSameDay(day, cycle.endDate) ||
             (day.isAfter(cycle.startDate) && day.isBefore(cycle.endDate))) {
@@ -133,26 +209,21 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       }
     }
 
-    // Jika ketemu, hapus!
     if (keyToDelete != null) {
       menstrualBox.delete(keyToDelete);
 
-      setState(() {
-        // Refresh halaman agar warna merah hilang
-      });
+      setState(() {});
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Siklus berhasil dihapus')));
     }
   }
-  // --- AKHIR KODE BARU ---
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-      valueListenable: menstrualBox
-          .listenable(), // menstrualBox.listenable() = Setiap kali ada data baru/dihapus dari menstrualBox, kalender refresh
+      valueListenable: menstrualBox.listenable(),
       builder: (context, Box<MenstrualCycle> box, _) {
         return Column(
           children: [
@@ -162,10 +233,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
+              // TAMBAHAN: Hilangin tombol 2 weeks
+              availableCalendarFormats: const {
+                CalendarFormat.month: 'Month',
+              },
               selectedDayPredicate: (day) =>
                   _selectedDay != null && _isSameDay(_selectedDay!, day),
               onDaySelected: (selectedDay, focusedDay) {
-                //Saat user klik hari, update state & tampilkan detail.
                 setState(() {
                   _selectedDay = selectedDay;
                   _focusedDay = focusedDay;
@@ -181,7 +255,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 _focusedDay = focusedDay;
               },
               calendarStyle: CalendarStyle(
-                //Warna default, today, selected, marker.
                 todayDecoration: BoxDecoration(
                   color: Colors.blue.shade300,
                   shape: BoxShape.circle,
@@ -196,7 +269,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 ),
               ),
               calendarBuilders: CalendarBuilders(
-                //Kustomisasi tampilan tiap hari (red, green, pink).
                 defaultBuilder: (context, day, focusedDay) {
                   return _buildDayCell(day);
                 },
@@ -221,7 +293,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildDayCell(
-    //Warna tiap hari tergantung statusnya
     DateTime day, {
     bool isToday = false,
     bool isSelected = false,
@@ -278,7 +349,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Wrap(
-        //Menampilkan keterangan warna kalender
         spacing: 12,
         runSpacing: 8,
         alignment: WrapAlignment.center,
@@ -309,18 +379,23 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildSelectedDayInfo() {
-    //Tampil ketika user klik hari tertentu. Menampilkan: Tanggal. Icon delete (hanya jika period). Clear selection (X).
     // Safety check
     if (_selectedDay == null) return const SizedBox.shrink();
 
-    final dayKey = _selectedDay!.toIso8601String().substring(
-      0,
-      10,
-    ); //berupa YYYY-MM-DD
+    final dayKey = _selectedDay!.toIso8601String().substring(0, 10);
     final dailyLog = dailyLogBox.get(dayKey);
 
     // Cek apakah hari ini merah (Period)
     bool isPeriod = _isPeriodDay(_selectedDay!);
+
+    // Cek apakah ini start date dari cycle
+    bool isStartDate = false;
+    for (var cycle in menstrualBox.values) {
+      if (_isSameDay(cycle.startDate, _selectedDay!)) {
+        isStartDate = true;
+        break;
+      }
+    }
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -329,7 +404,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Baris Judul & Tombol Action
+            // Baris Judul & Tombol Close
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -340,37 +415,74 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Row(
-                  children: [
-                    // --- TOMBOL HAPUS SIKLUS (Muncul cuma kalau isPeriod true) ---
-                    if (isPeriod)
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        tooltip: 'Hapus Siklus',
-                        onPressed: () {
-                          _showDeleteConfirmDialog(_selectedDay!);
-                        },
-                      ),
-                    // -------------------------------------------------------------
-
-                    // Tombol Clear Selection (X)
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 20),
-                      onPressed: _clearSelection,
-                      tooltip: 'Clear selection',
-                    ),
-                  ],
+                IconButton(
+                  icon: const Icon(Icons.close, size: 20),
+                  onPressed: _clearSelection,
+                  tooltip: 'Clear selection',
                 ),
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
+
+            // --- TOMBOL AKSI ---
+            // 1. Kalau BELUM period → tampilkan "Start Period Here"
+            if (!isPeriod)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _startPeriodHere(_selectedDay!),
+                  icon: const Icon(Icons.water_drop),
+                  label: const Text('Start Period Here'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade400,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+
+            // 2. Kalau SUDAH period → tampilkan tombol Edit & Delete
+            if (isPeriod) ...[
+              Row(
+                children: [
+                  // Tombol Edit End Date (cuma muncul kalau ini start date)
+                  if (isStartDate)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _editEndDate(_selectedDay!),
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Edit End'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade400,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                      ),
+                    ),
+                  if (isStartDate) const SizedBox(width: 8),
+                  
+                  // Tombol Delete Cycle
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showDeleteConfirmDialog(_selectedDay!),
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Delete'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
 
             // Log Harian
             if (dailyLog != null) ...[
+              const Divider(),
               if (dailyLog.mood.isNotEmpty) Text('Mood: ${dailyLog.mood}'),
               if (dailyLog.bleedingLevel != 'none')
                 Text('Bleeding: ${dailyLog.bleedingLevel}'),
@@ -401,11 +513,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
   void _showDayDetails(DateTime day) {
     final dayKey = day.toIso8601String().substring(0, 10);
-    final dailyLog = dailyLogBox.get(
-      dayKey,
-    ); //dailyLogBox adalah Hive box yang menyimpan log harian (DailyLog object) dengan key = "YYYY-MM-DD".
-
-    // You can add a bottom sheet or dialog here for more detailed day info
-    // For now, the info is shown in the card below the calendar
+    final dailyLog = dailyLogBox.get(dayKey);
   }
 }
