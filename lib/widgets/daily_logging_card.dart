@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/dailyLog.dart';
-import 'package:flutter/material.dart';
 
 class DailyLoggingCard extends StatefulWidget {
   final DateTime selectedDay;
@@ -20,20 +19,94 @@ class DailyLoggingCard extends StatefulWidget {
 class _DailyLoggingCardState extends State<DailyLoggingCard> {
   late DailyLog log;
   late String dayKey;
+  bool hasUnsavedChanges = false; // 🔹 Track perubahan yang belum disimpan
 
   @override
   void initState() {
     super.initState();
+    _loadLog();
+  }
+
+  @override
+  void didUpdateWidget(DailyLoggingCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload log kalau tanggal berubah
+    if (oldWidget.selectedDay != widget.selectedDay) {
+      _loadLog();
+    }
+  }
+
+  void _loadLog() {
     dayKey = widget.selectedDay.toIso8601String().substring(0, 10);
-    log = widget.dailyLogBox.get(dayKey) ??
-    DailyLog(
-      date: widget.selectedDay,
-    );
+    
+    // Load dari Hive atau buat baru
+    final existingLog = widget.dailyLogBox.get(dayKey);
+    
+    if (existingLog != null) {
+      // Clone data dari Hive agar tidak mengubah data asli sebelum save
+      log = DailyLog(
+        date: existingLog.date,
+        mood: existingLog.mood,
+        bleedingLevel: existingLog.bleedingLevel,
+        painLevel: existingLog.painLevel,
+        waterIntake: existingLog.waterIntake,
+      );
+    } else {
+      log = DailyLog(date: widget.selectedDay);
+    }
+    
+    hasUnsavedChanges = false;
+    setState(() {});
+  }
+
+  void _markChanged() {
+    setState(() {
+      hasUnsavedChanges = true;
+    });
   }
 
   void _save() {
     widget.dailyLogBox.put(dayKey, log);
-    setState(() {});
+    setState(() {
+      hasUnsavedChanges = false;
+    });
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '✅ Log berhasil disimpan untuk ${widget.selectedDay.day}/${widget.selectedDay.month}/${widget.selectedDay.year}',
+        ),
+        backgroundColor: Colors.green.shade600,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  // 🔹 Konfirmasi jika keluar tanpa save
+  Future<bool> _confirmDiscard() async {
+    if (!hasUnsavedChanges) return true;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Perubahan Belum Disimpan'),
+        content: const Text(
+          'Ada perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Buang Perubahan', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 
   @override
@@ -43,15 +116,45 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Daily Logging',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // Header dengan indikator unsaved changes
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Daily Logging',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                if (hasUnsavedChanges)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.shade300),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.edit, size: 14, color: Colors.orange.shade700),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Belum disimpan',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             _moodTracker(),
             const SizedBox(height: 16),
@@ -63,6 +166,29 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
             const SizedBox(height: 16),
 
             _waterIntake(),
+            const SizedBox(height: 20),
+
+            // 🔹 TOMBOL SAVE
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: hasUnsavedChanges ? _save : null, // Disable kalau tidak ada perubahan
+                icon: const Icon(Icons.save),
+                label: Text(
+                  hasUnsavedChanges ? 'Simpan Perubahan' : 'Tidak Ada Perubahan',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: hasUnsavedChanges 
+                      ? Colors.blue.shade600 
+                      : Colors.grey.shade300,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -76,7 +202,10 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Mood'),
+        const Text(
+          'Mood',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -85,9 +214,12 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
               label: Text(mood, style: const TextStyle(fontSize: 20)),
               selected: log.mood == mood,
               onSelected: (_) {
-                log.mood = mood;
-                _save();
+                setState(() {
+                  log.mood = mood;
+                });
+                _markChanged();
               },
+              selectedColor: Colors.pink.shade100,
             );
           }).toList(),
         ),
@@ -107,18 +239,29 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Bleeding Level'),
+        const Text(
+          'Bleeding Level',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: levels.entries.map((e) {
             return ChoiceChip(
-              label: Text(e.key),
+              label: Text(
+                e.key,
+                style: TextStyle(
+                  color: log.bleedingLevel == e.key ? Colors.white : Colors.black87,
+                ),
+              ),
               selected: log.bleedingLevel == e.key,
               selectedColor: e.value,
+              backgroundColor: Colors.grey.shade100,
               onSelected: (_) {
-                log.bleedingLevel = e.key;
-                _save();
+                setState(() {
+                  log.bleedingLevel = e.key;
+                });
+                _markChanged();
               },
             );
           }).toList(),
@@ -139,18 +282,29 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Pain Level'),
+        const Text(
+          'Pain Level',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           children: levels.entries.map((e) {
             return ChoiceChip(
-              label: Text(e.key),
+              label: Text(
+                e.key,
+                style: TextStyle(
+                  color: log.painLevel == e.key ? Colors.white : Colors.black87,
+                ),
+              ),
               selected: log.painLevel == e.key,
               selectedColor: e.value,
+              backgroundColor: Colors.grey.shade100,
               onSelected: (_) {
-                log.painLevel = e.key;
-                _save();
+                setState(() {
+                  log.painLevel = e.key;
+                });
+                _markChanged();
               },
             );
           }).toList(),
@@ -164,20 +318,44 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Water Intake: ${log.waterIntake} ml'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Water Intake',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            Text(
+              '${log.waterIntake} ml',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue.shade700,
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: [
             _waterButton('+250 ml', 250),
             _waterButton('+500 ml', 500),
             _waterButton('+1 L', 1000),
-            TextButton(
+            OutlinedButton.icon(
               onPressed: () {
-                log.waterIntake = 0;
-                _save();
+                setState(() {
+                  log.waterIntake = 0;
+                });
+                _markChanged();
               },
-              child: const Text('Reset'),
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Reset'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.red,
+                side: BorderSide(color: Colors.red.shade300),
+              ),
             ),
           ],
         ),
@@ -188,9 +366,15 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
   Widget _waterButton(String label, int amount) {
     return ElevatedButton(
       onPressed: () {
-        log.waterIntake += amount;
-        _save();
+        setState(() {
+          log.waterIntake += amount;
+        });
+        _markChanged();
       },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue.shade400,
+        foregroundColor: Colors.white,
+      ),
       child: Text(label),
     );
   }

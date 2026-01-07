@@ -455,8 +455,25 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 ),
               ),
 
-            // 2. Kalau SUDAH period → tampilkan tombol Edit & Delete
-            if (isPeriod) ...[
+            // 2. Kalau SUDAH period → tombol kecil Edit & Delete
+            if (isPeriod)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (isStartDate)
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      tooltip: 'Edit End Date',
+                      onPressed: () => _editEndDate(_selectedDay!),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    tooltip: 'Delete Cycle',
+                    onPressed: () => _showDeleteConfirmDialog(_selectedDay!),
+                  ),
+                ],
+              ),
+
               Row(
                 children: [
                   // Tombol Edit End Date (cuma muncul kalau ini start date)
@@ -491,16 +508,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 ],
               ),
               const SizedBox(height: 12),
-            ],
 
-             if (isPeriod)
+               if (isPeriod)
               DailyLoggingCard(
                 selectedDay: _selectedDay!,
                 dailyLogBox: dailyLogBox,
               ),
 
-            // Log Harian
-            if (dailyLog != null) ...[
+              if (dailyLog != null) ...[
               const Divider(),
               if (dailyLog.mood.isNotEmpty) Text('Mood: ${dailyLog.mood}'),
               if (dailyLog.bleedingLevel != 'none')
@@ -524,7 +539,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                   ),
                 ),
               ),
-          ],
+            ],
         ),
       ),
     );
