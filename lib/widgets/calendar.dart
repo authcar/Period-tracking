@@ -7,7 +7,6 @@ import '../models/dailyLog.dart';
 import '../services/periodPrediction.dart';
 import '../widgets/daily_logging_card.dart';
 
-
 class CalendarWidget extends StatefulWidget {
   const CalendarWidget({super.key});
 
@@ -86,14 +85,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   bool _hasPeriodInSameMonth(DateTime day) {
-  for (var cycle in menstrualBox.values) {
-    if (cycle.startDate.year == day.year &&
-        cycle.startDate.month == day.month) {
-      return true;
+    for (var cycle in menstrualBox.values) {
+      if (cycle.startDate.year == day.year &&
+          cycle.startDate.month == day.month) {
+        return true;
+      }
     }
+    return false;
   }
-  return false;
-}
 
   // --- FUNGSI BARU: START PERIOD ---
   Future<void> _startPeriodHere(DateTime day) async {
@@ -105,10 +104,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     final endDate = day.add(Duration(days: defaultPeriodLength - 1));
 
     // Buat cycle baru
-    final newCycle = MenstrualCycle(
-      startDate: day,
-      endDate: endDate,
-    );
+    final newCycle = MenstrualCycle(startDate: day, endDate: endDate);
 
     // Simpan ke Hive
     await menstrualBox.add(newCycle);
@@ -118,7 +114,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     });
 
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -164,7 +160,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       setState(() {});
 
       if (!mounted) return;
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -181,19 +177,19 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Hapus Siklus Menstruasi?'),
+          title: const Text('Delete Period Cycle?'),
           content: const Text(
-            'Data siklus menstruasi pada tanggal ini akan dihapus dan warna merah akan hilang.',
+            'the period cycle associated with this day will be permanently deleted. Are you sure you want to proceed?',
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Batal'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              child: const Text('Delete', style: TextStyle(color: Colors.red)),
               onPressed: () {
                 _removePeriodCycle(day);
                 Navigator.of(context).pop();
@@ -241,14 +237,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
           children: [
             // Calendar
             TableCalendar(
+              rowHeight: 56,
+
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
               // TAMBAHAN: Hilangin tombol 2 weeks
-              availableCalendarFormats: const {
-                CalendarFormat.month: 'Month',
-              },
+              availableCalendarFormats: const {CalendarFormat.month: 'Month'},
               selectedDayPredicate: (day) =>
                   _selectedDay != null && _isSameDay(_selectedDay!, day),
               onDaySelected: (selectedDay, focusedDay) {
@@ -267,6 +263,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                 _focusedDay = focusedDay;
               },
               calendarStyle: CalendarStyle(
+                cellMargin: const EdgeInsets.all(4),
                 todayDecoration: BoxDecoration(
                   color: Colors.blue.shade300,
                   shape: BoxShape.circle,
@@ -311,11 +308,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }) {
     Color? backgroundColor;
     Color textColor = Colors.black;
+    bool isPeriod = _isPeriodDay(day);
+    bool isPredicted = _isPredictedPeriod(day);
 
-    if (_isPeriodDay(day)) {
+    if (isPeriod) {
       backgroundColor = Colors.red.shade400;
       textColor = Colors.white;
-    } else if (_isPredictedPeriod(day)) {
+    } else if (isPredicted) {
       backgroundColor = Colors.red.shade100;
     } else if (_isOvulationDay(day)) {
       backgroundColor = Colors.green.shade400;
@@ -326,6 +325,38 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     if (isToday && backgroundColor == null) {
       backgroundColor = Colors.blue.shade100;
+    }
+
+    // ❤️ PERIOD = HEART SHAPE
+    if (isPeriod || isPredicted) {
+      return SizedBox(
+        width: 44,
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            CustomPaint(
+              size: const Size(38, 38),
+              painter: HeartPainter(color: backgroundColor!),
+            ),
+
+            if (isSelected)
+              CustomPaint(
+                size: const Size(42, 42),
+                painter: HeartPainter(color: Colors.pink.shade700),
+              ),
+
+            Text(
+              '${day.day}',
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (isSelected) {
@@ -391,7 +422,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   }
 
   Widget _buildSelectedDayInfo() {
-
     // Safety check
     if (_selectedDay == null) return const SizedBox.shrink();
 
@@ -410,138 +440,212 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       }
     }
 
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Baris Judul & Tombol Close
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      children: [
+        Card(
+          margin: const EdgeInsets.all(16),
+          elevation: 4,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Selected: ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                // Header dengan tombol close
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Selected: ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: _clearSelection,
+                      tooltip: 'Clear selection',
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Tombol Start Period (kalau belum period)
+                if (!isPeriod && !_hasPeriodInSameMonth(_selectedDay!))
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _startPeriodHere(_selectedDay!),
+                      icon: const Icon(Icons.water_drop),
+                      label: const Text('Start Period Here'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: _clearSelection,
-                  tooltip: 'Clear selection',
-                ),
+
+                // Pesan kalau sudah ada period di bulan ini
+                if (!isPeriod && _hasPeriodInSameMonth(_selectedDay!))
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.orange.shade700),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'You already have a period logged this month.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.orange.shade900,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Tombol Edit & Delete (kalau sudah period
+                if (isPeriod) ...[
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Wrap(
+                      spacing: 8,
+                      children: [
+                        if (isPeriod) // 🔹 PERBAIKAN: cek isStartDate, bukan isPeriod
+                          ElevatedButton.icon(
+                            onPressed: () => _editEndDate(_selectedDay!),
+                            icon: const Icon(Icons.edit, size: 16),
+                            label: const Text('Edit End'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange.shade400,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              minimumSize: const Size(0, 0),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                        ElevatedButton.icon(
+                          onPressed: () =>
+                              _showDeleteConfirmDialog(_selectedDay!),
+                          icon: const Icon(Icons.delete_outline, size: 16),
+                          label: const Text('Delete'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade600,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            minimumSize: const Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Divider(thickness: 1),
+
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.water_drop,
+                            size: 16,
+                            color: Colors.red.shade700,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Status: Period',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontStyle: FontStyle.italic,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Pesan kalau bukan period
+                if (!isPeriod && !_hasPeriodInSameMonth(_selectedDay!))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 18,
+                            color: Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Mood, bleeding, and pain logs are only available during your period.',
+                              style: TextStyle(
+                                color: Colors.grey.shade700,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // 🔹 DAILY LOGGING CARD (muncul di bawah card pertama saat period)
+                if (isPeriod)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      bottom: 16,
+                    ),
+                    child: DailyLoggingCard(
+                      selectedDay: _selectedDay!,
+                      dailyLogBox: dailyLogBox,
+                    ),
+                  ),
               ],
             ),
-
-            const SizedBox(height: 12),
-
-            // --- TOMBOL AKSI ---
-            // 1. Kalau BELUM period → tampilkan "Start Period Here"
-            if (!isPeriod && !_hasPeriodInSameMonth(_selectedDay!))
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _startPeriodHere(_selectedDay!),
-                  icon: const Icon(Icons.water_drop),
-                  label: const Text('Start Period Here'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade400,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-
-            // 2. Kalau SUDAH period → tombol kecil Edit & Delete
-            if (isPeriod)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (isStartDate)
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      tooltip: 'Edit End Date',
-                      onPressed: () => _editEndDate(_selectedDay!),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    tooltip: 'Delete Cycle',
-                    onPressed: () => _showDeleteConfirmDialog(_selectedDay!),
-                  ),
-                ],
-              ),
-
-              Row(
-                children: [
-                  // Tombol Edit End Date (cuma muncul kalau ini start date)
-                  if (isStartDate)
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _editEndDate(_selectedDay!),
-                        icon: const Icon(Icons.edit, size: 18),
-                        label: const Text('Edit End'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade400,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
-                  if (isStartDate) const SizedBox(width: 8),
-                  
-                  // Tombol Delete Cycle
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showDeleteConfirmDialog(_selectedDay!),
-                      icon: const Icon(Icons.delete_outline, size: 18),
-                      label: const Text('Delete'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-               if (isPeriod)
-              DailyLoggingCard(
-                selectedDay: _selectedDay!,
-                dailyLogBox: dailyLogBox,
-              ),
-
-              if (dailyLog != null) ...[
-              const Divider(),
-              if (dailyLog.mood.isNotEmpty) Text('Mood: ${dailyLog.mood}'),
-              if (dailyLog.bleedingLevel != 'none')
-                Text('Bleeding: ${dailyLog.bleedingLevel}'),
-              if (dailyLog.painLevel != 'none')
-                Text('Pain: ${dailyLog.painLevel}'),
-              if (dailyLog.waterIntake > 0)
-                Text('Water: ${dailyLog.waterIntake} ml'),
-            ] else if (!isPeriod)
-              const Text('No log for this day'),
-
-            // Indikator Status Tambahan
-            if (isPeriod)
-              const Padding(
-                padding: EdgeInsets.only(top: 8.0),
-                child: Text(
-                  'Status: Menstruasi (Period)',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -549,4 +653,74 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     final dayKey = day.toIso8601String().substring(0, 10);
     final dailyLog = dailyLogBox.get(dayKey);
   }
+}
+
+class HeartPainter extends CustomPainter {
+  final Color color;
+
+  HeartPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..strokeWidth = 0;
+
+    double w = size.width;
+    double h = size.height;
+
+    Path path = Path();
+
+    // Start from bottom tip
+    path.moveTo(w * 0.5, h);
+
+    // Left side of heart
+    path.cubicTo(
+      w * 0.2, h * 0.8,
+      0, h * 0.6,
+      0, h * 0.4,
+    );
+
+    // Left bump
+    path.cubicTo(
+      0, h * 0.15,
+      w * 0.2, 0,
+      w * 0.35, h * 0.1,
+    );
+
+    // Top center
+    path.cubicTo(
+      w * 0.45, h * 0.15,
+      w * 0.5, h * 0.2,
+      w * 0.5, h * 0.3,
+    );
+
+    // Right side mirrored
+    path.cubicTo(
+      w * 0.5, h * 0.2,
+      w * 0.55, h * 0.15,
+      w * 0.65, h * 0.1,
+    );
+
+    // Right bump
+    path.cubicTo(
+      w * 0.8, 0,
+      w, h * 0.15,
+      w, h * 0.4,
+    );
+
+    // Right side of heart
+    path.cubicTo(
+      w, h * 0.6,
+      w * 0.8, h * 0.8,
+      w * 0.5, h,
+    );
+
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
