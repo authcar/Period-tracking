@@ -312,19 +312,19 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     bool isPredicted = _isPredictedPeriod(day);
 
     if (isPeriod) {
-      backgroundColor = Colors.red.shade400;
+      backgroundColor = const Color.fromARGB(255, 250, 101, 143);
       textColor = Colors.white;
     } else if (isPredicted) {
-      backgroundColor = Colors.red.shade100;
+      backgroundColor = const Color(0xFFFFDAE0);
     } else if (_isOvulationDay(day)) {
-      backgroundColor = Colors.green.shade400;
+      backgroundColor = const Color.fromARGB(255, 215, 180, 255);
       textColor = Colors.white;
     } else if (_isFertileDay(day)) {
-      backgroundColor = Colors.green.shade100;
+      backgroundColor = const Color(0xFFE0F5DD);
     }
 
     if (isToday && backgroundColor == null) {
-      backgroundColor = Colors.blue.shade100;
+      backgroundColor = const Color(0xFFBDE0FE);
     }
 
     // ❤️ PERIOD = HEART SHAPE
@@ -396,9 +396,9 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         runSpacing: 8,
         alignment: WrapAlignment.center,
         children: [
-          _legendItem(Colors.red.shade400, 'Period'),
+          _legendItem(const Color.fromARGB(255, 250, 101, 143), 'Period'),
           _legendItem(Colors.red.shade100, 'Predicted Period'),
-          _legendItem(Colors.green.shade400, 'Ovulation'),
+          _legendItem(const Color.fromARGB(255, 215, 180, 255), 'Ovulation'),
           _legendItem(Colors.green.shade100, 'Fertile Window'),
           _legendItem(Colors.blue.shade100, 'Today'),
         ],
@@ -526,7 +526,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                             icon: const Icon(Icons.edit, size: 16),
                             label: const Text('Edit End'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.orange.shade400,
+                              backgroundColor: const Color(0xFFBDE0FE),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -542,7 +542,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                           icon: const Icon(Icons.delete_outline, size: 16),
                           label: const Text('Delete'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade600,
+                            backgroundColor: const Color.fromARGB(255, 220, 93, 91),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
