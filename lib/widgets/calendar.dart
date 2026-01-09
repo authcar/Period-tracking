@@ -392,8 +392,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Wrap(
-        spacing: 12,
-        runSpacing: 8,
+        spacing: 60, 
+        runSpacing: 12,
         alignment: WrapAlignment.center,
         children: [
           _legendItem(const Color.fromARGB(255, 250, 101, 143), 'Period'),
@@ -478,7 +478,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     child: ElevatedButton.icon(
                       onPressed: () => _startPeriodHere(_selectedDay!),
                       icon: const Icon(Icons.water_drop),
-                      label: const Text('Start Period Here'),
+                      label: const Text('Start Period'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red.shade400,
                         foregroundColor: Colors.white,
@@ -520,13 +520,13 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     child: Wrap(
                       spacing: 8,
                       children: [
-                        if (isPeriod) // 🔹 PERBAIKAN: cek isStartDate, bukan isPeriod
+                        if (isStartDate) 
                           ElevatedButton.icon(
                             onPressed: () => _editEndDate(_selectedDay!),
                             icon: const Icon(Icons.edit, size: 16),
                             label: const Text('Edit End'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFBDE0FE),
+                              backgroundColor: const Color.fromARGB(255, 107, 169, 222),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,

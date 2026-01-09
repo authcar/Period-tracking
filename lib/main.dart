@@ -4,6 +4,8 @@ import 'screens/home.dart';
 import 'models/menstrual_cycle.dart';
 import 'models/dailyLog.dart';
 import 'models/userSettings.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +34,7 @@ class MyApp extends StatelessWidget {
       title: 'Period Tracker',
       theme: ThemeData(
         primarySwatch: Colors.pink,
+        textTheme: GoogleFonts.vidalokaTextTheme(),
       ),
       home: HomeScreen(),
     );

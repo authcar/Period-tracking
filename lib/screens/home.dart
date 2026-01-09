@@ -66,20 +66,26 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Period Tracker"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.location_on),
-            onPressed: _showCurrentLocation,
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Column(
-          children: const [
-            SizedBox(height: 16),
+          children: [
+
+            Container(
+              width: double.infinity,
+              height: 130, // 👈 Lebih kecil
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/images/banner.png'),
+                  fit: BoxFit.fill,
+                ),
+              ),
+            )
+            ,
+            SizedBox(height: 12),
             CalendarWidget(),
+
+            // Height: 80px (lebih hemat space)
+            
           ],
         ),
       ),

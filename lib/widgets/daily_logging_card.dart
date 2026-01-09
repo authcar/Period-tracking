@@ -89,9 +89,9 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Perubahan Belum Disimpan'),
+        title: const Text('changes not saved'),
         content: const Text(
-          'Ada perubahan yang belum disimpan. Yakin ingin keluar tanpa menyimpan?',
+          'there are unsaved changes. Do you want to discard them?',
         ),
         actions: [
           TextButton(
@@ -100,7 +100,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Buang Perubahan', style: TextStyle(color: Colors.red)),
+            child: const Text('discard changes', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -175,12 +175,12 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
                 onPressed: hasUnsavedChanges ? _save : null, // Disable kalau tidak ada perubahan
                 icon: const Icon(Icons.save),
                 label: Text(
-                  hasUnsavedChanges ? 'Simpan Perubahan' : 'Tidak Ada Perubahan',
+                  hasUnsavedChanges ? 'save changes' : 'no changes to save',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: hasUnsavedChanges 
                       ? Colors.blue.shade600 
-                      : Colors.grey.shade300,
+                      : const Color.fromARGB(255, 139, 137, 137),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
@@ -316,26 +316,29 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
   // 💧 WATER INTAKE
   Widget _waterIntake() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start, 
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
               'Water Intake',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
-            Text(
-              '${log.waterIntake} ml',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue.shade700,
+            const Spacer(),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(
+                '${log.waterIntake} ml',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: const Color.fromARGB(255, 105, 175, 246),
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 3),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -372,7 +375,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
         _markChanged();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue.shade400,
+        backgroundColor: const Color.fromARGB(255, 125, 194, 250),
         foregroundColor: Colors.white,
       ),
       child: Text(label),
