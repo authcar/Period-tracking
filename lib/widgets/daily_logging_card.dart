@@ -74,7 +74,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '✅ Log berhasil disimpan untuk ${widget.selectedDay.day}/${widget.selectedDay.month}/${widget.selectedDay.year}',
+          'Changes Saved ${widget.selectedDay.day}/${widget.selectedDay.month}/${widget.selectedDay.year}',
         ),
         backgroundColor: Colors.green.shade600,
         duration: const Duration(seconds: 2),
@@ -112,6 +112,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: const Color.fromARGB(255, 247, 228, 238),
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -126,7 +127,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
               children: [
                 const Text(
                   'Daily Logging',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 16),
                 ),
                 if (hasUnsavedChanges)
                   Container(
@@ -142,11 +143,10 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
                         Icon(Icons.edit, size: 14, color: Colors.orange.shade700),
                         const SizedBox(width: 4),
                         Text(
-                          'Belum disimpan',
+                          'unsaved changes',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.orange.shade700,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -156,17 +156,26 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
             ),
             const SizedBox(height: 12),
 
-            _moodTracker(),
-            const SizedBox(height: 16),
-
-            _bleedingLevel(),
-            const SizedBox(height: 16),
-
-            _painLevel(),
-            const SizedBox(height: 16),
-
-            _waterIntake(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 1, child: _moodTracker()),
+                const SizedBox(width: 8),
+                Expanded(flex: 1, child: _painLevel()),
+              ],
+            ),
             const SizedBox(height: 20),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start, 
+              children: [
+                Expanded(flex: 1, child: _bleedingLevel()), 
+                Expanded(child: _waterIntake()),
+              ],
+            ),
+            const SizedBox(height: 20), 
+
+
 
             // 🔹 TOMBOL SAVE
             SizedBox(
@@ -179,7 +188,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: hasUnsavedChanges 
-                      ? Colors.blue.shade600 
+                      ? const Color.fromARGB(255, 75, 149, 213) 
                       : const Color.fromARGB(255, 139, 137, 137),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -204,7 +213,6 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
       children: [
         const Text(
           'Mood',
-          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -241,7 +249,6 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
       children: [
         const Text(
           'Bleeding Level',
-          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -284,7 +291,6 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
       children: [
         const Text(
           'Pain Level',
-          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -322,7 +328,6 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
           children: [
             const Text(
               'Water Intake',
-              style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const Spacer(),
             Padding(
@@ -332,7 +337,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 105, 175, 246),
+                  color: const Color.fromARGB(255, 17, 90, 162),
                 ),
               ),
             ),
@@ -375,7 +380,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
         _markChanged();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 125, 194, 250),
+        backgroundColor: const Color.fromARGB(255, 20, 96, 158),
         foregroundColor: Colors.white,
       ),
       child: Text(label),

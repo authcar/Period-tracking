@@ -118,8 +118,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Period dimulai ${day.day}/${day.month}/${day.year}\n'
-          'Estimasi selesai: ${endDate.day}/${endDate.month}/${endDate.year}',
+          'Period started on ${day.day}/${day.month}/${day.year}\n'
+          'Estimated end date ${endDate.day}/${endDate.month}/${endDate.year}',
         ),
         duration: const Duration(seconds: 3),
       ),
@@ -224,7 +224,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Siklus berhasil dihapus')));
+      ).showSnackBar(const SnackBar(content: Text('period cycle deleted')));
     }
   }
 
@@ -307,7 +307,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     bool isSelected = false,
   }) {
     Color? backgroundColor;
-    Color textColor = Colors.black;
+    Color textColor = Colors.black; 
     bool isPeriod = _isPeriodDay(day);
     bool isPredicted = _isPredictedPeriod(day);
 
@@ -458,7 +458,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                       'Selected: ${_selectedDay!.day}/${_selectedDay!.month}/${_selectedDay!.year}',
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
@@ -477,10 +476,10 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () => _startPeriodHere(_selectedDay!),
-                      icon: const Icon(Icons.water_drop),
+                      icon: const Icon(Icons.nights_stay_rounded),
                       label: const Text('Start Period'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade400,
+                        backgroundColor: const Color.fromARGB(255, 250, 101, 143),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
@@ -558,40 +557,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                   const SizedBox(height: 12),
                   const Divider(thickness: 1),
 
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.water_drop,
-                            size: 16,
-                            color: Colors.red.shade700,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Status: Period',
-                            style: TextStyle(
-                              color: Colors.red.shade700,
-                              fontStyle: FontStyle.italic,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
 
                 // Pesan kalau bukan period
