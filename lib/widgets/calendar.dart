@@ -238,13 +238,19 @@ class _CalendarWidgetState extends State<CalendarWidget> {
             // Calendar
             TableCalendar(
               rowHeight: 56,
-
               firstDay: DateTime.utc(2020, 1, 1),
               lastDay: DateTime.utc(2030, 12, 31),
               focusedDay: _focusedDay,
               calendarFormat: _calendarFormat,
               // TAMBAHAN: Hilangin tombol 2 weeks
               availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+
+              headerStyle: const HeaderStyle(
+              titleTextStyle: TextStyle(
+                fontSize: 19,
+              ),
+            ),
+
               selectedDayPredicate: (day) =>
                   _selectedDay != null && _isSameDay(_selectedDay!, day),
               onDaySelected: (selectedDay, focusedDay) {
