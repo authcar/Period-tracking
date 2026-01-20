@@ -5,22 +5,22 @@ import 'models/menstrual_cycle.dart';
 import 'models/dailyLog.dart';
 import 'models/userSettings.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+ import 'screens/about_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
-  Hive.registerAdapter(MenstrualCycleAdapter());
-  Hive.registerAdapter(DailyLogAdapter());
+  Hive.registerAdapter(MenstrualCycleAdapter()); //daftarkan adapter agar Hive mengenali tipe data kita
+  Hive.registerAdapter(DailyLogAdapter()); 
   Hive.registerAdapter(UserSettingsAdapter());
 
-  await Hive.openBox<MenstrualCycle>('menstrualDataBox');
+  await Hive.openBox<MenstrualCycle>('menstrualDataBox'); //untuk menyimpan data siklus menstruasi
   await Hive.openBox<DailyLog>('dailyLogBox');
   await Hive.openBox<UserSettings>('settingsBox');
 
   final settingsBox = Hive.box<UserSettings>('settingsBox');
-  if (settingsBox.isEmpty) { // "Kalau laci kosong (belum ada isinya)... taruh setting default
+  if (settingsBox.isEmpty) { // "Kalau belum ada isinya, taruh setting default
     settingsBox.put(0, UserSettings());
   }
   
@@ -37,6 +37,9 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.vidalokaTextTheme(),
       ),
       home: HomeScreen(),
+      routes: {
+        '/about': (context) =>  const AboutPage(),
+      },
     );
   }
 }

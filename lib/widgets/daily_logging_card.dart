@@ -38,10 +38,10 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
 
   void _loadLog() {
     dayKey = widget.selectedDay.toIso8601String().substring(0, 10);
-    
+
     // Load dari Hive atau buat baru
     final existingLog = widget.dailyLogBox.get(dayKey);
-    
+
     if (existingLog != null) {
       // Clone data dari Hive agar tidak mengubah data asli sebelum save
       log = DailyLog(
@@ -54,7 +54,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     } else {
       log = DailyLog(date: widget.selectedDay);
     }
-    
+
     hasUnsavedChanges = false;
     setState(() {});
   }
@@ -67,10 +67,16 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
 
   void _save() {
     widget.dailyLogBox.put(dayKey, log);
+
+    print('SAVED DAILY LOG');
+    print('KEY: $dayKey');
+    print('VALUE: $log'); // Untuk debugging hive
+    print('ALL DATA: ${widget.dailyLogBox.toMap()}');
+
     setState(() {
       hasUnsavedChanges = false;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -100,7 +106,10 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('discard changes', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'discard changes',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -125,13 +134,13 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Daily Logging',
-                  style: TextStyle(fontSize: 16),
-                ),
+                const Text('Daily Logging', style: TextStyle(fontSize: 16)),
                 if (hasUnsavedChanges)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade100,
                       borderRadius: BorderRadius.circular(12),
@@ -140,7 +149,11 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.edit, size: 14, color: Colors.orange.shade700),
+                        Icon(
+                          Icons.edit,
+                          size: 14,
+                          color: Colors.orange.shade700,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           'unsaved changes',
@@ -156,39 +169,72 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
             ),
             const SizedBox(height: 12),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 1, child: _moodTracker()),
-                const SizedBox(width: 8),
-                Expanded(flex: 1, child: _painLevel()),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 360) {
+                  // HP kecil → vertikal
+                  return Column(
+                    children: [
+                      _moodTracker(),
+                      const SizedBox(height: 16),
+                      _painLevel(),
+                    ],
+                  );
+                } else {
+                  // HP besar / tablet
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _moodTracker()),
+                      const SizedBox(width: 12),
+                      Expanded(child: _painLevel()),
+                    ],
+                  );
+                }
+              },
             ),
+
             const SizedBox(height: 20),
 
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start, 
-              children: [
-                Expanded(flex: 1, child: _bleedingLevel()), 
-                Expanded(child: _waterIntake()),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 360) {
+                  return Column(
+                    children: [
+                      _bleedingLevel(),
+                      const SizedBox(height: 16),
+                      _waterIntake(),
+                    ],
+                  );
+                } else {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _bleedingLevel()),
+                      const SizedBox(width: 12),
+                      Expanded(child: _waterIntake()),
+                    ],
+                  );
+                }
+              },
             ),
-            const SizedBox(height: 20), 
 
-
+            const SizedBox(height: 20),
 
             // 🔹 TOMBOL SAVE
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: hasUnsavedChanges ? _save : null, // Disable kalau tidak ada perubahan
+                onPressed: hasUnsavedChanges
+                    ? _save
+                    : null, // Disable kalau tidak ada perubahan
                 icon: const Icon(Icons.save),
                 label: Text(
                   hasUnsavedChanges ? 'save changes' : 'no changes to save',
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: hasUnsavedChanges 
-                      ? const Color.fromARGB(255, 75, 149, 213) 
+                  backgroundColor: hasUnsavedChanges
+                      ? const Color.fromARGB(255, 75, 149, 213)
                       : const Color.fromARGB(255, 139, 137, 137),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -206,14 +252,12 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
 
   // 😊 MOOD TRACKER
   Widget _moodTracker() {
-    final moods = ['😊', '😐', '😔', '😢', '😠', '🥱'];
+    final moods = ['ヽ( `д´*)ノ', '(´• ω •`)', '	(╥﹏╥)', '	(x_x)', '	╮(︶︿︶)╭'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Mood',
-        ),
+        const Text('Mood'),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -247,9 +291,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Bleeding Level',
-        ),
+        const Text('Bleeding Level'),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -258,7 +300,9 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
               label: Text(
                 e.key,
                 style: TextStyle(
-                  color: log.bleedingLevel == e.key ? Colors.white : Colors.black87,
+                  color: log.bleedingLevel == e.key
+                      ? Colors.white
+                      : Colors.black87,
                 ),
               ),
               selected: log.bleedingLevel == e.key,
@@ -289,9 +333,7 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Pain Level',
-        ),
+        const Text('Pain Level'),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -322,13 +364,11 @@ class _DailyLoggingCardState extends State<DailyLoggingCard> {
   // 💧 WATER INTAKE
   Widget _waterIntake() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, 
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Text(
-              'Water Intake',
-            ),
+            const Text('Water Intake'),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.only(right: 8),

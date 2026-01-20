@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'menstrual_cycle.g.dart';
 
-@HiveType(typeId: 1)
+@HiveType(typeId: 1) //typeid unik untuk sambungin ke Hive
 class MenstrualCycle extends HiveObject {
   @HiveField(0)
   DateTime startDate;

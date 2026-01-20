@@ -2,7 +2,7 @@ import 'package:hive/hive.dart';
 
 part 'dailyLog.g.dart';
 
-@HiveType(typeId: 2)
+@HiveType(typeId: 2) //typeid unik untuk sambungin ke Hive
 class DailyLog extends HiveObject {
   @HiveField(0)
   DateTime date;
@@ -11,13 +11,13 @@ class DailyLog extends HiveObject {
   String mood;
 
   @HiveField(2)
-  String bleedingLevel; // none, light, medium, heavy
+  String bleedingLevel; 
 
   @HiveField(3)
-  String painLevel; // none, mild, moderate, severe
+  String painLevel; 
 
   @HiveField(4)
-  int waterIntake; // total ml
+  int waterIntake; 
 
   DailyLog({
     required this.date,

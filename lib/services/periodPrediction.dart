@@ -8,7 +8,7 @@ class PeriodPredictionService {
 
   /// Ambil data cycle terakhir user
   MenstrualCycle? getLatestCycle() {
-    if (menstrualBox.isEmpty) return null;
+    if (menstrualBox.isEmpty) return null; 
     return menstrualBox.values.last;
   }
 

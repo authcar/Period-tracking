@@ -15,6 +15,8 @@ class CalendarWidget extends StatefulWidget {
 }
 
 class _CalendarWidgetState extends State<CalendarWidget> {
+
+
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
@@ -230,83 +232,85 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder(
-      valueListenable: menstrualBox.listenable(),
-      builder: (context, Box<MenstrualCycle> box, _) {
-        return Column(
-          children: [
-            // Calendar
-            TableCalendar(
-              rowHeight: 56,
-              firstDay: DateTime.utc(2020, 1, 1),
-              lastDay: DateTime.utc(2030, 12, 31),
-              focusedDay: _focusedDay,
-              calendarFormat: _calendarFormat,
-              // TAMBAHAN: Hilangin tombol 2 weeks
-              availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+    return SafeArea (
+      child: ValueListenableBuilder( // ui rebuild tiap data berubah di hive
+        valueListenable: menstrualBox.listenable(),
+        builder: (context, Box<MenstrualCycle> box, _) {
+          return Column(
+            children: [
+              // Calendar
+              TableCalendar(
+                rowHeight: 42,
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: _focusedDay,
+                calendarFormat: _calendarFormat,
+                // TAMBAHAN: Hilangin tombol 2 weeks
+                availableCalendarFormats: const {CalendarFormat.month: 'Month'},
 
-              headerStyle: const HeaderStyle(
-              titleTextStyle: TextStyle(
-                fontSize: 19,
+                headerStyle: const HeaderStyle(
+                titleTextStyle: TextStyle(
+                  fontSize: 19,
+                ),
               ),
-            ),
 
-              selectedDayPredicate: (day) =>
-                  _selectedDay != null && _isSameDay(_selectedDay!, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  _selectedDay = selectedDay;
+                selectedDayPredicate: (day) =>
+                    _selectedDay != null && _isSameDay(_selectedDay!, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDay = selectedDay;
+                    _focusedDay = focusedDay;
+                  });
+                  _showDayDetails(selectedDay);
+                },
+                onFormatChanged: (format) {
+                  setState(() {
+                    _calendarFormat = format;
+                  });
+                },
+                onPageChanged: (focusedDay) {
                   _focusedDay = focusedDay;
-                });
-                _showDayDetails(selectedDay);
-              },
-              onFormatChanged: (format) {
-                setState(() {
-                  _calendarFormat = format;
-                });
-              },
-              onPageChanged: (focusedDay) {
-                _focusedDay = focusedDay;
-              },
-              calendarStyle: CalendarStyle(
-                cellMargin: const EdgeInsets.all(4),
-                todayDecoration: BoxDecoration(
-                  color: Colors.blue.shade300,
-                  shape: BoxShape.circle,
+                },
+                calendarStyle: CalendarStyle(
+                  cellMargin: const EdgeInsets.all(4),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.blue.shade300,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.pink.shade400,
+                    shape: BoxShape.circle,
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: Colors.red.shade700,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                selectedDecoration: BoxDecoration(
-                  color: Colors.pink.shade400,
-                  shape: BoxShape.circle,
-                ),
-                markerDecoration: BoxDecoration(
-                  color: Colors.red.shade700,
-                  shape: BoxShape.circle,
+                calendarBuilders: CalendarBuilders(
+                  defaultBuilder: (context, day, focusedDay) {
+                    return _buildDayCell(day);
+                  },
+                  todayBuilder: (context, day, focusedDay) {
+                    return _buildDayCell(day, isToday: true);
+                  },
+                  selectedBuilder: (context, day, focusedDay) {
+                    return _buildDayCell(day, isSelected: true);
+                  },
                 ),
               ),
-              calendarBuilders: CalendarBuilders(
-                defaultBuilder: (context, day, focusedDay) {
-                  return _buildDayCell(day);
-                },
-                todayBuilder: (context, day, focusedDay) {
-                  return _buildDayCell(day, isToday: true);
-                },
-                selectedBuilder: (context, day, focusedDay) {
-                  return _buildDayCell(day, isSelected: true);
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Legend
-            _buildLegend(),
-            const SizedBox(height: 20),
-            // Selected day info
-            if (_selectedDay != null) _buildSelectedDayInfo(),
-          ],
-        );
-      },
+              const SizedBox(height: 16),
+              // Legend
+              _buildLegend(),
+              const SizedBox(height: 16),
+              // Selected day info
+              if (_selectedDay != null) _buildSelectedDayInfo(),
+            ],
+          );
+        },
+      ) 
     );
   }
-
+  //ui builders untuk tiap hari
   Widget _buildDayCell(
     DateTime day, {
     bool isToday = false,
@@ -346,7 +350,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               painter: HeartPainter(color: backgroundColor!),
             ),
 
-            if (isSelected)
+            if (isSelected) // tambahin border kalo selected
               CustomPaint(
                 size: const Size(42, 42),
                 painter: HeartPainter(color: Colors.pink.shade700),
@@ -365,7 +369,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
       );
     }
 
-    if (isSelected) {
+    if (isSelected) { 
       return Container(
         margin: const EdgeInsets.all(4),
         decoration: BoxDecoration(
@@ -398,7 +402,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Wrap(
-        spacing: 60, 
+        spacing: 20, 
         runSpacing: 12,
         alignment: WrapAlignment.center,
         children: [
@@ -492,14 +496,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                     ),
                   ),
 
-                // Pesan kalau sudah ada period di bulan ini
+                // kalau sudah ada period di bulan ini
                 if (!isPeriod && _hasPeriodInSameMonth(_selectedDay!))
-                  Container(
+                  Container( 
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
+                      border: Border.all(color: Colors.orange.shade200), 
                     ),
                     child: Row(
                       children: [
@@ -507,7 +511,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'You already have a period logged this month.',
+                            'You already have a period logged this month.', //warning orange border
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.orange.shade900,
